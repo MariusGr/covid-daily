@@ -38,6 +38,11 @@ AVAILABLE_COUNTRIES = [
     'yemen', 'china'
 ]
 
+AVAILABLE_PROVINCES = [
+    'usa/new-york',
+    'usa/florida',
+]
+
 AVAILABLE_CHARTS = [
     'total-currently-infected-linear',
     'deaths-cured-outcome-small',

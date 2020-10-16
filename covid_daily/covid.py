@@ -14,7 +14,7 @@ from datetime import datetime
 import numpy as np
 
 from .utils import is_visible, highcharts_parser
-from .constants import AVAILABLE_COUNTRIES, AVAILABLE_CHARTS
+from .constants import AVAILABLE_COUNTRIES, AVAILABLE_PROVINCES, AVAILABLE_CHARTS
 
 
 def overview(as_json=False):
@@ -90,7 +90,7 @@ def overview(as_json=False):
         return json.loads(json.dumps(data.to_dict(orient='records')))
 
 
-def data(country, chart, as_json=False):
+def data(chart, country=None, province=None, as_json=False):
     """
     This function will retrieve the coronavirus data overview from all the available countries 
     from worldometers.info/coronavirus/, which contains real time data and statistics from multiple
@@ -98,11 +98,14 @@ def data(country, chart, as_json=False):
 
     Args:
         chart (:obj:`str`):
-            name of the country to retrieve the COVID data from (available values at: 
-            `covid_daily.constants.AVAILABLE_COUNTRIES`)
-        chart (:obj:`str`):
             name of the chart to retrieve the COVID data from (available values at: 
             `covid_daily.constants.AVAILABLE_CHARTS`)
+        country (:obj:`str`):
+            name of the country to retrieve the COVID data from (available values at: 
+            `covid_daily.constants.AVAILABLE_COUNTRIES`)
+        province (:obj:`str`):
+            name of the province to retrieve the COVID data from (available values at: 
+            `covid_daily.constants.AVAILABLE_PROVINCES`). Does not need a country to be given.
         as_json (:obj:`bool`):
             set to `True` if overview wants to be retrieved as :obj:`json`, if not, 
             leave default value (`False`).
@@ -119,22 +122,37 @@ def data(country, chart, as_json=False):
 
     """
 
-    if not isinstance(country, str):
+    # get location
+    use_province = False
+    if province is None:
+        location = country
+    else:
+        location = province
+        use_province = True
+
+    # check and format location
+    if not isinstance(location, str):
         raise ValueError("country must be a valid str.")
+    location = unidecode(location.strip().lower().replace(' ', '-'))
 
-    country = unidecode(country.strip().lower().replace(' ', '-'))
-
-    if country not in AVAILABLE_COUNTRIES:
-        raise ValueError("Introduced country is a valid value, but not a valid country.")
-
+    # check chart input
     if not isinstance(chart, str):
-        raise ValueError("chart must be a valid str.")
-
+            raise ValueError("chart must be a valid str.")
     if chart not in AVAILABLE_CHARTS:
-        raise ValueError("Introduced chart is a valid value, but not a valid chart.")
+            raise ValueError("Introduced chart is a valid value, but not a valid chart.")
 
-    url = "https://www.worldometers.info/coronavirus/country/" + country + "/"
-    
+    # check location and create url
+    if use_province:
+        if location not in AVAILABLE_PROVINCES:
+            raise ValueError("Introduced province is a valid value, but not a valid province.")
+    else:
+        if location not in AVAILABLE_COUNTRIES:
+            raise ValueError("Introduced country is a valid value, but not a valid country.")
+
+        # prefix needed for country url
+        location = "country/" + location
+
+    url = "https://www.worldometers.info/coronavirus/" + location + "/"
     req = requests.get(url)
     
     if req.status_code != 200:
