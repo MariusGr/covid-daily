@@ -52,5 +52,6 @@ AVAILABLE_CHARTS = [
     'coronavirus-deaths-linear',
     'graph-deaths-daily',
     'cases-cured-daily',
-    'deaths-cured-outcome'
+    'deaths-cured-outcome',
+    'coronavirus-cases-linear',
 ]
