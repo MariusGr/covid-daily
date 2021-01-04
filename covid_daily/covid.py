@@ -175,8 +175,24 @@ def data(chart, country=None, province=None, as_json=False):
         chart = highcharts_parser(highchart_script=script)
 
         x = chart['series'][0]['data']
-        y = [datetime.strptime(value + ', 2020', '%b %d, %Y') for value in chart['xAxis']['categories']]
 
+        y_days = chart['xAxis']['categories']
+        # recorded data starts in February 2020
+        month_index = 2
+        last_month = "Feb"
+        year = 2020
+        y = []
+        for day in y_days:
+            month = day[:-3]
+            if not month == last_month:
+                last_month = month
+                month_index += 1
+                if month_index > 12:
+                    month_index = 0
+                    year += 1
+            date = datetime.strptime(day + ', {}'.format(year), '%b %d, %Y')
+            y.append(date)
+            
         data = pd.DataFrame({'Date': y, chart['column']: x})
         data.set_index('Date', inplace=True)
 
