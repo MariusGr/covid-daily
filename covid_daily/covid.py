@@ -161,44 +161,50 @@ def data(chart, country=None, province=None, as_json=False):
     root = fromstring(req.text)
     scripts = root.xpath(".//script")
     
-    flag = False
+    data_found = False
 
+    x = []
+    y = []
     for script in scripts:
         if not script.text_content().strip().__contains__("Highcharts.chart"):
             continue
 
         chart_title = highcharts_parser(highchart_script=script, just_title=True)
+        highchart = highcharts_parser(highchart_script=script)
+        # y will hold any valid series of timestamps from any chart
+        y_days = highchart['xAxis']['categories']
 
         if chart_title != chart:
             continue
 
-        chart = highcharts_parser(highchart_script=script)
+        x = highchart['series'][0]['data']
+        data_found = True
+        break
 
-        x = chart['series'][0]['data']
+    if len(y_days) < 1:
+        raise RuntimeError("{} {} could not be retrieved since it is not available at Worldometers.info!".format(chart, location))
 
-        y_days = chart['xAxis']['categories']
-        # recorded data starts in February 2020
-        month_index = 2
-        last_month = "Feb"
-        year = 2020
-        y = []
-        for day in y_days:
-            month = day[:-3]
-            if not month == last_month:
-                last_month = month
-                month_index += 1
-                if month_index > 12:
-                    month_index = 0
-                    year += 1
-            date = datetime.strptime(day + ', {}'.format(year), '%b %d, %Y')
-            y.append(date)
-            
-        data = pd.DataFrame({'Date': y, chart['column']: x})
-        data.set_index('Date', inplace=True)
+    if not data_found:
+        print("{} {} could not be retrieved since it is not available at Worldometers.info! Falling back to mockup table.".format(chart, location))
+        x = [0] * len(y_days)
 
-        flag = True
+    # recorded data starts in February 2020
+    month_index = 2
+    last_month = "Feb"
+    year = 2020
+    y = []
+    for day in y_days:
+        month = day[:-3]
+        if not month == last_month:
+            last_month = month
+            month_index += 1
+            if month_index > 12:
+                month_index = 0
+                year += 1
+        date = datetime.strptime(day + ', {}'.format(year), '%b %d, %Y')
+        y.append(date)
 
-    if not flag:
-        raise RuntimeError("Information could not be retrieved since it is not available at Worldometers.info!")
+    data = pd.DataFrame({'Date': y, highchart['column']: x})
+    data.set_index('Date', inplace=True)
 
     return data
